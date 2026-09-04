@@ -85,7 +85,7 @@ def _ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
 socket.getaddrinfo = _ipv4_only
 
 
-def _retry(fn, attempts: int = 5):
+def _retry(fn, attempts: int = 3):
     for i in range(attempts):
         try:
             return fn()
@@ -122,7 +122,7 @@ def http_json(url: str, payload: dict) -> dict:
     )
 
     def call() -> dict:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             return json.loads(resp.read().decode("utf-8"))
 
     return _retry(call)
@@ -132,7 +132,7 @@ def http_text(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "linigra-raspored/1.0"})
 
     def call() -> str:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             return resp.read().decode("utf-8")
 
     return _retry(call)
