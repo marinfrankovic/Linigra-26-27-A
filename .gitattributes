@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.ics -text
+*.csv -text
+*.png binary

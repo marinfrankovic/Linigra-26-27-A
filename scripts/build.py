@@ -851,7 +851,7 @@ def main() -> None:
         "checked_at": now.strftime("%d. %m. %Y. %H:%M UTC"),
         "changed_at": datetime.fromisoformat(changed_at).strftime("%d. %m. %Y. %H:%M UTC"),
     }
-    (DOCS / "index.html").write_text(render_html(ctx), encoding="utf-8")
+    (DOCS / "index.html").write_text(render_html(ctx), encoding="utf-8", newline="\n")
 
     status = {
         "fingerprint": fingerprint,
@@ -878,7 +878,7 @@ def main() -> None:
         ],
     }
     status_path.write_text(
-        json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
 
     print(

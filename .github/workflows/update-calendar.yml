@@ -45,10 +45,15 @@ jobs:
           git add docs
           if git diff --cached --quiet; then
             echo "Nema promjena u rasporedu."
-          else
-            git commit -m "Automatsko osvježavanje rasporeda ($(date -u '+%Y-%m-%d %H:%M UTC'))"
-            git push
+            exit 0
           fi
+          git commit -m "Automatsko osvjezavanje rasporeda ($(date -u '+%Y-%m-%d %H:%M UTC'))"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "Pokusaj $i nije uspio, ponavljam..."
+            sleep 5
+          done
+          exit 1
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
