@@ -203,6 +203,7 @@ h2 {
 }
 
 .note { margin: 0 0 20px; color: var(--muted); max-width: 68ch; }
+.note.small { margin-top: -12px; font-size: 13px; }
 
 .cards, .split {
   display: grid;

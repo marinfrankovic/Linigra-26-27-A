@@ -638,9 +638,15 @@ def render_html(ctx: dict) -> str:
     )
 
     closed_rows = "".join(
-        f"<li><strong>{d.strftime('%d. %m. %Y.')}</strong> – {html.escape(name)}</li>"
+        f"<li><strong>{d.strftime('%d. %m. %Y.')}</strong> · {DAY_NAMES_HR[d.weekday()].lower()}"
+        f" – {html.escape(name)}</li>"
         for d, name in sorted(ctx["closed"].items())
     ) or "<li>Nema neradnih dana unutar polugodišta.</li>"
+
+    milestone_rows = "".join(
+        f"<li><strong>{label}</strong> – {html.escape(name)}</li>"
+        for label, name in ctx["milestones"]
+    )
 
     variant_rows = "".join(
         "<li><strong>{frm} – {to}</strong> · EduPage raspored #{num}{label}</li>".format(
@@ -742,8 +748,14 @@ def render_html(ctx: dict) -> str:
     <ul class="bells">{bells}</ul>
   </div>
   <div>
-    <h2>Nema nastave</h2>
+    <h2>Važni datumi</h2>
+    <ul class="plain">{milestone_rows}</ul>
+    <h2>Blagdani koji padaju na nastavni dan</h2>
     <ul class="plain">{closed_rows}</ul>
+    <p class="note small">Popis je kratak jer u ovom polugodištu samo jedan državni blagdan
+    pada na radni dan. Svi sveti (1. 11.) padaju u nedjelju, a Božić i Sveti Stjepan su
+    već unutar zimskog odmora. Dane koje škola sama proglasi nenastavnima (Dan škole,
+    stručno usavršavanje) ovdje nema jer nisu objavljeni ni u jednom javnom kalendaru.</p>
     <h2>Verzije rasporeda</h2>
     <ul class="plain">{variant_rows}</ul>
   </div>
@@ -874,8 +886,17 @@ def main() -> None:
     write_csv(events, DOCS / CSV_NAME)
 
     school_days = len({e.start for e in lessons})
+    fmt = lambda d: d.strftime("%d. %m. %Y.")
+    milestones = [(fmt(term_start), "prvi dan nastave"), (fmt(term_end), "zadnji dan 1. polugodišta")]
+    for ev in sorted((e for e in events if e.all_day), key=lambda e: e.start):
+        if ev.start <= term_end:
+            continue
+        span = fmt(ev.start) if ev.start == ev.end else f"{fmt(ev.start)} – {fmt(ev.end)}"
+        milestones.append((span, ev.summary.replace(" – nema nastave", "")))
+
     ctx = {
         "closed": closed,
+        "milestones": milestones,
         "variants": variants,
         "lesson_count": len(lessons),
         "school_days": school_days,
