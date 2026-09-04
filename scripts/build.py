@@ -917,6 +917,18 @@ document.querySelectorAll('[data-copy]').forEach(function (btn) {{
 # --------------------------------------------------------------------------- #
 
 
+# Tragovi UTF-8 teksta procitanog kao latin-1/cp1252 ili izgubljenog znaka.
+MOJIBAKE = ("Ä", "Å¡", "Å¾", "Ä\u008d", "Ã\u0083", "\ufffd")
+
+
+def assert_clean_utf8(path: Path) -> None:
+    raw = path.read_bytes()
+    text = raw.decode("utf-8-sig")  # baca UnicodeDecodeError na neispravan UTF-8
+    for marker in MOJIBAKE:
+        if marker in text:
+            raise SystemExit(f"{path.name}: pronaden mojibake {marker!r} – provjeri kodiranje izvora")
+
+
 def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
 
@@ -1022,6 +1034,9 @@ def main() -> None:
     status_path.write_text(
         json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
+
+    for name in (ICS_NAME, CSV_NAME, "index.html"):
+        assert_clean_utf8(DOCS / name)
 
     print(
         f"{'PROMJENA' if changed else 'bez promjene'} · "
