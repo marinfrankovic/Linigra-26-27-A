@@ -423,7 +423,7 @@ class Event:
 
 
 def title(lesson: Lesson) -> str:
-    text = f"{lesson.subject} ({lesson.short})"
+    text = lesson.subject
     if lesson.groups:
         text += " – " + ", ".join(lesson.groups)
     return text
@@ -447,7 +447,6 @@ def expand(
             if day.weekday() <= 4 and day not in closed:
                 for b in per_day.get(day.weekday(), []):
                     les = b.lesson
-                    room = ", ".join(les.rooms) or CLASS_NAME
                     events.append(
                         Event(
                             uid=make_uid(day.isoformat(), str(b.periods[0]), les.short),
@@ -456,14 +455,8 @@ def expand(
                             end=day,
                             start_time=b.start,
                             end_time=b.end,
-                            location=f"{room} – {SCHOOL_NAME}, {SCHOOL_ADDRESS}",
-                            description=(
-                                f"Razred {CLASS_NAME}\\n"
-                                f"Predmet: {les.subject} ({les.short})\\n"
-                                f"Nastavnik: {', '.join(les.teachers) or '–'}\\n"
-                                f"Učionica: {room}\\n"
-                                f"Sat: {', '.join(map(str, b.periods))}"
-                            ),
+                            location="",
+                            description=", ".join(les.teachers),
                             all_day=False,
                         )
                     )
@@ -494,7 +487,7 @@ def holiday_events(
                 end=h.end,
                 start_time=None,
                 end_time=None,
-                location=f"{SCHOOL_NAME}, {SCHOOL_ADDRESS}",
+                location="",
                 description="Izvor: javni kalendar Školski praznici HR",
                 all_day=True,
             )
@@ -510,7 +503,7 @@ def holiday_events(
                 end=day,
                 start_time=None,
                 end_time=None,
-                location=f"{SCHOOL_NAME}, {SCHOOL_ADDRESS}",
+                location="",
                 description="Državni blagdan, Zakon o blagdanima (NN 110/2019)",
                 all_day=True,
             )
@@ -600,8 +593,10 @@ def render_ics(events: list[Event], stamp: str, sequence: int, cal_name: str) ->
             )
             lines.append("TRANSP:OPAQUE")
         lines.append(f"SUMMARY:{esc(ev.summary)}")
-        lines.append(f"LOCATION:{esc(ev.location)}")
-        lines.append(f"DESCRIPTION:{esc(ev.description)}")
+        if ev.location:
+            lines.append(f"LOCATION:{esc(ev.location)}")
+        if ev.description:
+            lines.append(f"DESCRIPTION:{esc(ev.description)}")
         lines.append("STATUS:CONFIRMED")
         lines.append("END:VEVENT")
     lines.append("END:VCALENDAR")
@@ -655,17 +650,14 @@ def weekly_table_html(variant: Variant) -> str:
         rows = []
         for b in per_day.get(wd, []):
             les = b.lesson
-            room = ", ".join(les.rooms) or CLASS_NAME
             rows.append(
                 "<li><span class='t'>{start}–{end}</span>"
                 "<span class='s'>{subject}</span>"
-                "<span class='m'>{short} · {teacher} · {room}</span></li>".format(
+                "<span class='m'>{teacher}</span></li>".format(
                     start=b.start,
                     end=b.end,
                     subject=html.escape(les.subject),
-                    short=html.escape(les.short),
                     teacher=html.escape(", ".join(les.teachers) or "–"),
-                    room=html.escape(room),
                 )
             )
         cols.append(
@@ -797,9 +789,9 @@ def render_html(ctx: dict) -> str:
 <section class="cards">
   <article class="card">
     <h2>Što je unutra</h2>
-    <p>Svi nastavni sati razreda {CLASS_NAME} za 1. polugodište, s predmetom,
-    nastavnikom, učionicom i rednim brojem sata. Praznici i neradni dani upisani su
-    kao cjelodnevni događaji i tada nastave nema.</p>
+    <p>Svi nastavni sati razreda {CLASS_NAME} za 1. polugodište. Svaki upis ima samo
+    naziv predmeta i ime nastavnika, bez šifri i podataka o školi. Praznici i neradni dani
+    upisani su kao cjelodnevni događaji i tada nastave nema.</p>
     <ul class="facts">
       <li><strong>{ctx['lesson_count']}</strong> nastavnih upisa</li>
       <li><strong>{ctx['school_days']}</strong> nastavnih dana</li>
