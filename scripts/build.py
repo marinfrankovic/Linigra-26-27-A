@@ -187,6 +187,42 @@ def term_bounds(holidays: list[Holiday]) -> tuple[date, date]:
     return start or FALLBACK_TERM_START, end or FALLBACK_TERM_END
 
 
+def easter(year: int) -> date:
+    """Uskrsna nedjelja po gregorijanskom (anonimnom) algoritmu."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month, day = divmod(h + l - 7 * m + 114, 31)
+    return date(year, month, day + 1)
+
+
+def statutory_holidays(year: int) -> dict[date, str]:
+    """Svih 14 neradnih dana po Zakonu o blagdanima (NN 110/2019)."""
+    us = easter(year)
+    return {
+        date(year, 1, 1): "Nova godina",
+        date(year, 1, 6): "Sveta tri kralja",
+        us: "Uskrs",
+        us + timedelta(days=1): "Uskrsni ponedjeljak",
+        date(year, 5, 1): "Praznik rada",
+        date(year, 5, 30): "Dan državnosti",
+        us + timedelta(days=60): "Tijelovo",
+        date(year, 6, 22): "Dan antifašističke borbe",
+        date(year, 8, 5): "Dan pobjede i domovinske zahvalnosti",
+        date(year, 8, 15): "Velika Gospa",
+        date(year, 11, 1): "Svi sveti",
+        date(year, 11, 18): "Dan sjećanja na žrtve Domovinskog rata",
+        date(year, 12, 25): "Božić",
+        date(year, 12, 26): "Sveti Stjepan",
+    }
+
+
 def no_school_days(holidays: list[Holiday], start: date, end: date) -> dict[date, str]:
     out: dict[date, str] = {}
     for h in holidays:
@@ -410,12 +446,19 @@ def expand(
     return events
 
 
-def holiday_events(holidays: list[Holiday], term_start: date, term_end: date) -> list[Event]:
+def holiday_events(
+    holidays: list[Holiday],
+    statutory: dict[date, str],
+    term_start: date,
+    term_end: date,
+) -> list[Event]:
     out: list[Event] = []
+    covered: set[date] = set()
     window_end = term_end + timedelta(days=21)
     for h in holidays:
         if not (term_start <= h.start <= window_end):
             continue
+        covered.update(h.days)
         info = any(tag in h.summary.lower() for tag in INFO_ONLY)
         summary = h.summary if info else f"{h.summary} – nema nastave"
         out.append(
@@ -428,6 +471,22 @@ def holiday_events(holidays: list[Holiday], term_start: date, term_end: date) ->
                 end_time=None,
                 location=f"{SCHOOL_NAME}, {SCHOOL_ADDRESS}",
                 description="Izvor: javni kalendar Školski praznici HR",
+                all_day=True,
+            )
+        )
+    for day, name in sorted(statutory.items()):
+        if not (term_start <= day <= window_end) or day in covered:
+            continue
+        out.append(
+            Event(
+                uid=make_uid("blagdan", day.isoformat(), name),
+                summary=f"{name} – nema nastave" if day.weekday() <= 4 else name,
+                start=day,
+                end=day,
+                start_time=None,
+                end_time=None,
+                location=f"{SCHOOL_NAME}, {SCHOOL_ADDRESS}",
+                description="Državni blagdan, Zakon o blagdanima (NN 110/2019)",
                 all_day=True,
             )
         )
@@ -754,8 +813,10 @@ def render_html(ctx: dict) -> str:
     <ul class="plain">{closed_rows}</ul>
     <p class="note small">Popis je kratak jer u ovom polugodištu samo jedan državni blagdan
     pada na radni dan. Svi sveti (1. 11.) padaju u nedjelju, a Božić i Sveti Stjepan su
-    već unutar zimskog odmora. Dane koje škola sama proglasi nenastavnima (Dan škole,
-    stručno usavršavanje) ovdje nema jer nisu objavljeni ni u jednom javnom kalendaru.</p>
+    već unutar zimskog odmora. Kalendar sam izbacuje nastavu na svih 14 neradnih dana iz
+    Zakona o blagdanima, uključujući pomične datume oko Uskrsa. Dane koje škola sama
+    proglasi nenastavnima (Dan škole, stručno usavršavanje) ovdje nema jer nisu objavljeni
+    ni u jednom javnom kalendaru.</p>
     <h2>Verzije rasporeda</h2>
     <ul class="plain">{variant_rows}</ul>
   </div>
@@ -850,10 +911,18 @@ def main() -> None:
 
     term_start, term_end = term_bounds(holidays)
     closed = no_school_days(holidays, term_start, term_end)
+
+    statutory: dict[date, str] = {}
+    for year in range(term_start.year, term_end.year + 2):
+        statutory.update(statutory_holidays(year))
+    for day, name in statutory.items():
+        if term_start <= day <= term_end and day.weekday() <= 4:
+            closed.setdefault(day, name)
+
     variants = build_variants(term_start, term_end)
 
     lessons = expand(variants, term_start, term_end, closed)
-    events = lessons + holiday_events(holidays, term_start, term_end)
+    events = lessons + holiday_events(holidays, statutory, term_start, term_end)
 
     status_path = DATA / "status.json"
     previous = json.loads(status_path.read_text(encoding="utf-8")) if status_path.exists() else {}
