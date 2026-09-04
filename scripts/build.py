@@ -15,6 +15,9 @@ import html
 import json
 import os
 import re
+import socket
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
@@ -71,20 +74,51 @@ INFO_ONLY = ("prvi dan škole", "zadnji dan nastave")
 # --------------------------------------------------------------------------- #
 
 
+# GitHub runneri nemaju IPv6 izlaz, a EduPage i Google objavljuju AAAA zapise.
+_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+    return _getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+
+socket.getaddrinfo = _ipv4_only
+
+
+def _retry(fn, attempts: int = 4):
+    for i in range(attempts):
+        try:
+            return fn()
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            if i == attempts - 1:
+                raise
+            wait = 2 ** i
+            print(f"mrežna greška ({exc}); ponovni pokušaj za {wait}s")
+            time.sleep(wait)
+
+
 def http_json(url: str, payload: dict) -> dict:
     req = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json", "User-Agent": "linigra-raspored/1.0"},
     )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+
+    def call() -> dict:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    return _retry(call)
 
 
 def http_text(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "linigra-raspored/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read().decode("utf-8")
+
+    def call() -> str:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return resp.read().decode("utf-8")
+
+    return _retry(call)
 
 
 # --------------------------------------------------------------------------- #
