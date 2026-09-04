@@ -85,16 +85,33 @@ def _ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
 socket.getaddrinfo = _ipv4_only
 
 
-def _retry(fn, attempts: int = 4):
+def _retry(fn, attempts: int = 5):
     for i in range(attempts):
         try:
             return fn()
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             if i == attempts - 1:
                 raise
-            wait = 2 ** i
+            wait = 3 * (i + 1)
             print(f"mrežna greška ({exc}); ponovni pokušaj za {wait}s")
             time.sleep(wait)
+
+
+def cached(name: str, loader):
+    """Dohvat s mreže uz pad na zadnju spremljenu kopiju kad je izvor nedostupan."""
+    path = DATA / name
+    try:
+        data = loader()
+    except Exception as exc:
+        if not path.exists():
+            raise
+        print(f"upozorenje: {name} s mreže nije dostupan ({exc}); koristim spremljenu kopiju")
+        return json.loads(path.read_text(encoding="utf-8"))
+    DATA.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8", newline="\n"
+    )
+    return data
 
 
 def http_json(url: str, payload: dict) -> dict:
@@ -270,7 +287,12 @@ class Variant:
 
 
 def fetch_variants() -> list[dict]:
-    data = http_json(TTVIEWER_URL, {"__args": [None, SCHOOL_YEAR_START], "__gsh": "00000000"})
+    data = cached(
+        "edupage-timetables.json",
+        lambda: http_json(
+            TTVIEWER_URL, {"__args": [None, SCHOOL_YEAR_START], "__gsh": "00000000"}
+        ),
+    )
     regular = data["r"]["regular"]
     items = [
         t
@@ -283,7 +305,10 @@ def fetch_variants() -> list[dict]:
 
 
 def fetch_tables(tt_num: str) -> dict[str, list[dict]]:
-    data = http_json(REGULARTT_URL, {"__args": [None, str(tt_num)], "__gsh": "00000000"})
+    data = cached(
+        f"edupage-tt-{tt_num}.json",
+        lambda: http_json(REGULARTT_URL, {"__args": [None, str(tt_num)], "__gsh": "00000000"}),
+    )
     return {t["id"]: t["data_rows"] for t in data["r"]["dbiAccessorRes"]["tables"]}
 
 
@@ -904,7 +929,8 @@ def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
 
     try:
-        holidays = parse_holidays(http_text(HOLIDAYS_ICS))
+        raw = cached("skolski-praznici.json", lambda: {"ics": http_text(HOLIDAYS_ICS)})
+        holidays = parse_holidays(raw["ics"])
     except Exception as exc:  # kalendar praznika je pomocni izvor
         print(f"upozorenje: kalendar praznika nije dostupan ({exc})")
         holidays = []
