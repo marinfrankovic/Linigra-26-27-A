@@ -2,8 +2,8 @@ name: Osvježi raspored
 
 on:
   schedule:
-    # Ponedjeljak i srijeda u 05:00 UTC (07:00 po zagrebačkom ljetnom vremenu).
-    - cron: "0 5 * * 1,3"
+    # Svaki dan u 05:00 UTC (07:00 po zagrebačkom ljetnom, 06:00 po zimskom vremenu).
+    - cron: "0 5 * * *"
   workflow_dispatch:
   push:
     branches: [main]

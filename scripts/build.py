@@ -757,7 +757,7 @@ def render_html(ctx: dict) -> str:
   <p class="kicker">Pretplati se jednom</p>
   <h1>Raspored {CLASS_NAME}<span>LINIGRA · {SCHOOL_YEAR_START}./{SCHOOL_YEAR_START + 1}.</span></h1>
   <p class="lede">Kalendar nije za uvoz nego za pretplatu. Škola objavi novi raspored,
-  ovaj se kalendar sam osvježi u ponedjeljak i srijedu, a promjena stigne u tvoju
+  ovaj se kalendar sam osvježi svako jutro, a promjena stigne u tvoju
   aplikaciju bez da išta radiš.</p>
   <div class="cta">
     <div class="addcal">
@@ -875,7 +875,7 @@ def render_html(ctx: dict) -> str:
   <p>Izvor rasporeda: <a href="https://linigra.edupage.org/timetable/" target="_blank" rel="noopener">EduPage stranica škole LINIGRA</a>.
   Izvor praznika: javni kalendar <em>Školski praznici HR</em>.</p>
   <p>Zadnja provjera: <strong>{ctx['checked_at']}</strong> · zadnja promjena kalendara:
-  <strong>{ctx['changed_at']}</strong> · provjera ponedjeljkom i srijedom.</p>
+  <strong>{ctx['changed_at']}</strong> · provjera svaki dan.</p>
   <p class="fine">Neslužbeni kalendar. Kod raspored škole i objave na EduPageu ima prednost.</p>
 </footer>
 

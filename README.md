@@ -15,7 +15,7 @@ promjena stigne u Google Kalendar, Apple Kalendar ili Outlook bez ikakve akcije.
    kalendara *Školski praznici HR*.
 2. Iz toga gradi `docs/linigra-1a.ics` (pretplata), `docs/linigra-1a.csv`
    (jednokratni uvoz u klasični Outlook), `docs/index.html` i `docs/data/status.json`.
-3. GitHub Actions to pokreće **ponedjeljkom i srijedom u 05:00 UTC** te ručno preko
+3. GitHub Actions to pokreće **svaki dan u 05:00 UTC** te ručno preko
    *Run workflow*. Ako se sadržaj promijenio, commita se novi ICS i objavljuje na
    GitHub Pages.
 
