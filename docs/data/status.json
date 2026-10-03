@@ -1,13 +1,13 @@
 {
-  "fingerprint": "4f5b1045cc00266bcaff6567a02ab5c14759c7d0506b9bee054531b0772b60f7",
-  "ics_stamp": "20261002T104551Z",
-  "sequence": 6,
-  "changed_at": "2026-10-02T10:45:51+00:00",
-  "checked_at": "2026-10-02T10:45:51+00:00",
+  "fingerprint": "924689b342c2f1753891885f096db74d1c7d97f719bdc06641dbffd7d887c7f5",
+  "ics_stamp": "20261003T100606Z",
+  "sequence": 7,
+  "changed_at": "2026-10-03T10:06:06+00:00",
+  "checked_at": "2026-10-03T10:06:06+00:00",
   "class": "1.A",
   "term_start": "2026-09-07",
   "term_end": "2026-12-23",
-  "lesson_events": 325,
+  "lesson_events": 388,
   "holiday_events": 4,
   "school_days": 72,
   "no_school_days": {
@@ -32,8 +32,15 @@
       "tt_num": "24",
       "label": "T5 (05. 10. - 09. 10. 2026)",
       "valid_from": "2026-10-05",
-      "valid_to": "2026-12-23",
+      "valid_to": "2026-10-11",
       "weekly_blocks": 21
+    },
+    {
+      "tt_num": "25",
+      "label": "T6-T7 (12. 10. - 23. 10. 2026)",
+      "valid_from": "2026-10-12",
+      "valid_to": "2026-12-23",
+      "weekly_blocks": 27
     }
   ]
 }
