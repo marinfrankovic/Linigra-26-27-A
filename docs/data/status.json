@@ -1,26 +1,19 @@
 {
-  "fingerprint": "27d185e5e1af353e237d1b38fd80713e052419f7cf5c607f596f4319b2d56d52",
-  "ics_stamp": "20261019T102121Z",
-  "sequence": 11,
-  "changed_at": "2026-10-19T10:21:21+00:00",
-  "checked_at": "2026-10-25T09:33:42+00:00",
+  "fingerprint": "4c3538bd7c70ffc856712053fa633afd58145954c8d8dd371ca18c75827d92d0",
+  "ics_stamp": "20261026T083010Z",
+  "sequence": 12,
+  "changed_at": "2026-10-26T08:30:10+00:00",
+  "checked_at": "2026-10-26T08:30:10+00:00",
   "class": "1.A",
   "term_start": "2026-09-07",
   "term_end": "2026-12-23",
-  "lesson_events": 350,
+  "lesson_events": 316,
   "holiday_events": 4,
-  "school_days": 57,
+  "school_days": 52,
   "no_school_days": {
     "2026-11-18": "Dan sjećanja na žrtve Domovinskog rata"
   },
   "timetables": [
-    {
-      "tt_num": "24",
-      "label": "T5 (05. 10. - 09. 10. 2026)",
-      "valid_from": "2026-10-05",
-      "valid_to": "2026-10-11",
-      "weekly_blocks": 21
-    },
     {
       "tt_num": "25",
       "label": "T6-T7 (12. 10. - 23. 10. 2026)",
@@ -32,15 +25,8 @@
       "tt_num": "26",
       "label": "T8 (26. 10. - 30. 10. 2026)",
       "valid_from": "2026-10-26",
-      "valid_to": "2026-11-01",
-      "weekly_blocks": 31
-    },
-    {
-      "tt_num": "27",
-      "label": "T9-11 (02. 11. - 20. 11. 2026)",
-      "valid_from": "2026-11-02",
       "valid_to": "2026-12-23",
-      "weekly_blocks": 33
+      "weekly_blocks": 31
     }
   ]
 }

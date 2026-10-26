@@ -23,6 +23,7 @@ import urllib.request
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # --------------------------------------------------------------------------- #
 # Konfiguracija
@@ -379,8 +380,11 @@ def weekly_blocks(tables: dict[str, list[dict]]) -> tuple[dict[str, dict], list[
     return periods, sorted(blocks, key=lambda b: (b.weekday, b.start))
 
 
-def build_variants(term_start: date, term_end: date) -> list[Variant]:
-    listing = fetch_variants()
+def build_variants(term_start: date, term_end: date, as_of: date) -> list[Variant]:
+    listing = [
+        item for item in fetch_variants()
+        if date.fromisoformat(item["datefrom"]) <= as_of
+    ]
     variants: list[Variant] = []
     for i, item in enumerate(listing):
         frm = datetime.strptime(item["datefrom"], "%Y-%m-%d").date()
@@ -812,7 +816,8 @@ def render_html(ctx: dict) -> str:
 
 <section>
   <h2>Tjedni raspored</h2>
-  <p class="note">Prikaz vrijedi za raspored koji je trenutno objavljen na EduPageu.
+    <p class="note">Prikaz vrijedi za raspored na snazi od
+    {ctx['variants'][-1].valid_from.strftime('%d. %m. %Y.')}.
   Stranica se gradi iz istog izvora iz kojeg se gradi i kalendar, pa je ovo točno ono
   što stiže u tvoju aplikaciju.</p>
   {ctx['week_html']}
@@ -931,6 +936,8 @@ def assert_clean_utf8(path: Path) -> None:
 
 def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(timezone.utc)
+    today = now.astimezone(ZoneInfo(TIMEZONE_ID)).date()
 
     try:
         raw = cached("skolski-praznici.json", lambda: {"ics": http_text(HOLIDAYS_ICS)})
@@ -949,7 +956,7 @@ def main() -> None:
         if term_start <= day <= term_end and day.weekday() <= 4:
             closed.setdefault(day, name)
 
-    variants = build_variants(term_start, term_end)
+    variants = build_variants(term_start, term_end, today)
 
     lessons = expand(variants, term_start, term_end, closed)
     events = lessons + holiday_events(holidays, statutory, term_start, term_end)
@@ -968,7 +975,6 @@ def main() -> None:
         ).encode("utf-8")
     ).hexdigest()
 
-    now = datetime.now(timezone.utc)
     changed = fingerprint != previous.get("fingerprint")
     stamp = now.strftime("%Y%m%dT%H%M%SZ") if changed else previous.get(
         "ics_stamp", now.strftime("%Y%m%dT%H%M%SZ")
